@@ -3,6 +3,7 @@ package com.example.room_db
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -11,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.room_db.database.daftarBelanja
 import com.example.room_db.database.daftarBelanjaDB
+import com.example.room_db.database.historyBelanjaDB
 import com.example.room_db.AdapterDaftar
 import com.example.room_db.database.daftarBelanjaDao
 import com.example.room_db.database.DateHelper.getCurrentDate
@@ -24,6 +26,7 @@ import kotlinx.coroutines.withContext
 class MainActivity : AppCompatActivity() {
     private lateinit var DB: daftarBelanjaDB
     private lateinit var adapterDaftar: AdapterDaftar
+    private lateinit var DBHistory: historyBelanjaDB
     private var arDaftar : MutableList<daftarBelanja> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,10 +39,17 @@ class MainActivity : AppCompatActivity() {
             insets
         }
         DB = daftarBelanjaDB.getDatabase(this)
+        DBHistory = historyBelanjaDB.getDatabase(this)
 
         val _fabAdd = findViewById<FloatingActionButton>(R.id.fabAdd)
         _fabAdd.setOnClickListener {
             val intent = Intent(this, TambahDaftar::class.java)
+            startActivity(intent)
+        }
+
+        val _btnHistory = findViewById<Button>(R.id.btnHistory)
+        _btnHistory.setOnClickListener {
+            val intent = Intent(this, HistoryBelanja::class.java)
             startActivity(intent)
         }
 
@@ -56,6 +66,14 @@ class MainActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         adapterDaftar.isiData(daftar)
                     }
+                }
+            }
+            override fun finishData(dtBelanja: daftarBelanja) {
+                //Hapus dari daftar belanja
+                delData(dtBelanja)
+                //Tambahkan ke history belanja
+                CoroutineScope(Dispatchers.IO).async {
+                    DBHistory.funhistoryBelanjaDAO().insert(dtBelanja)
                 }
             }
         })
